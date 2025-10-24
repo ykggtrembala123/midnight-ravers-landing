@@ -1,4 +1,5 @@
-import { pgTable, serial, varchar, text, timestamp } from "drizzle-orm/pg-core";
+mport { pgTable, serial, varchar, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 /**
  * Core user table backing auth flow.
@@ -30,6 +31,7 @@ export type InsertUser = typeof users.$inferInsert;
 /**
  * Tabela para armazenar leads da pré-venda do drop "Midnigth Raver$"
  * MIGRADO PARA POSTGRESQL (SUPABASE)
+ * CORRIGIDO: Removido defaultNow() para evitar conflito com default do banco
  */
 export const leadsMiddnightRavers = pgTable("leads_midnight_ravers", {
   id: serial("id").primaryKey(),
@@ -37,9 +39,8 @@ export const leadsMiddnightRavers = pgTable("leads_midnight_ravers", {
   email: varchar("email", { length: 320 }).notNull(),
   phone: varchar("phone", { length: 50 }).notNull(),
   instagram: varchar("instagram", { length: 100 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 });
 
 export type Lead = typeof leadsMiddnightRavers.$inferSelect;
 export type InsertLead = typeof leadsMiddnightRavers.$inferInsert;
-
