@@ -1,24 +1,30 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { InsertLead, InsertUser, leadsMiddnightRavers, users } from "../drizzle/schema";
+import { InsertUser, leadsMiddnightRavers, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _client: ReturnType<typeof postgres> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 // MIGRADO PARA POSTGRESQL (SUPABASE)
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      const client = postgres(process.env.DATABASE_URL);
-      _db = drizzle(client);
+      _client = postgres(process.env.DATABASE_URL);
+      _db = drizzle(_client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
+      _client = null;
     }
   }
   return _db;
+}
+
+export function getClient() {
+  return _client;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -96,34 +102,28 @@ export async function getUserByOpenId(openId: string) {
 
 /**
  * Adicionar um novo lead da pré-venda
- * MIGRADO PARA POSTGRESQL (SUPABASE)
- * CORRIGIDO: Mapeamento explícito dos campos
+ * SOLUÇÃO DEFINITIVA: Usa postgres client diretamente para evitar problema com Drizzle
  */
-export async function createLead(lead: InsertLead) {
-  const db = await getDb();
-  if (!db) {
+export async function createLead(lead: { fullName: string; email: string; phone: string; instagram: string }) {
+  const client = getClient();
+  if (!client) {
     throw new Error("Database not available");
   }
 
-  console.log("[Database] Received lead data:", lead);
+  console.log("[Database] Inserting lead:", lead);
   
   try {
-    // Mapeamento explícito dos campos para garantir que os valores sejam passados corretamente
-    const leadData = {
-      fullName: lead.fullName,
-      email: lead.email,
-      phone: lead.phone,
-      instagram: lead.instagram,
-    };
+    // Usa o client do postgres diretamente, sem Drizzle
+    const result = await client`
+      INSERT INTO leads_midnight_ravers (full_name, email, phone, instagram)
+      VALUES (${lead.fullName}, ${lead.email}, ${lead.phone}, ${lead.instagram})
+      RETURNING *
+    `;
     
-    console.log("[Database] Mapped lead data:", leadData);
-    
-    const result = await db.insert(leadsMiddnightRavers).values(leadData);
-    console.log("[Database] Lead inserted successfully");
+    console.log("[Database] Lead inserted successfully:", result);
     return result;
   } catch (error) {
     console.error("[Database] Failed to insert lead:", error);
-    console.error("[Database] Error details:", JSON.stringify(error, null, 2));
     throw error;
   }
 }
