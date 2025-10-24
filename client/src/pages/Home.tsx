@@ -182,7 +182,7 @@ export default function Home() {
           className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-[0.15em] md:tracking-[0.2em] mb-3 md:mb-4 text-center px-4"
           style={{ fontFamily: 'Impact, sans-serif' }}
         >
-          MIDNIGTH RAVER$
+          MIDNIGHT RAVER$
         </h1>
 
         {/* H2 - ACESSO ANTECIPADO */}
