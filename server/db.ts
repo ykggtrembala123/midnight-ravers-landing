@@ -97,6 +97,7 @@ export async function getUserByOpenId(openId: string) {
 /**
  * Adicionar um novo lead da pré-venda
  * MIGRADO PARA POSTGRESQL (SUPABASE)
+ * CORRIGIDO: Mapeamento explícito dos campos
  */
 export async function createLead(lead: InsertLead) {
   const db = await getDb();
@@ -104,14 +105,25 @@ export async function createLead(lead: InsertLead) {
     throw new Error("Database not available");
   }
 
-  console.log("[Database] Attempting to insert lead:", lead);
+  console.log("[Database] Received lead data:", lead);
   
   try {
-    const result = await db.insert(leadsMiddnightRavers).values(lead);
+    // Mapeamento explícito dos campos para garantir que os valores sejam passados corretamente
+    const leadData = {
+      fullName: lead.fullName,
+      email: lead.email,
+      phone: lead.phone,
+      instagram: lead.instagram,
+    };
+    
+    console.log("[Database] Mapped lead data:", leadData);
+    
+    const result = await db.insert(leadsMiddnightRavers).values(leadData);
     console.log("[Database] Lead inserted successfully");
     return result;
   } catch (error) {
     console.error("[Database] Failed to insert lead:", error);
+    console.error("[Database] Error details:", JSON.stringify(error, null, 2));
     throw error;
   }
 }
