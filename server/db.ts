@@ -104,8 +104,16 @@ export async function createLead(lead: InsertLead) {
     throw new Error("Database not available");
   }
 
-  const result = await db.insert(leadsMiddnightRavers).values(lead);
-  return result;
+  console.log("[Database] Attempting to insert lead:", lead);
+  
+  try {
+    const result = await db.insert(leadsMiddnightRavers).values(lead);
+    console.log("[Database] Lead inserted successfully");
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to insert lead:", error);
+    throw error;
+  }
 }
 
 /**
@@ -120,4 +128,3 @@ export async function getAllLeads() {
 
   return await db.select().from(leadsMiddnightRavers);
 }
-
