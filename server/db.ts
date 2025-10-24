@@ -23,10 +23,6 @@ export async function getDb() {
   return _db;
 }
 
-export function getClient() {
-  return _client;
-}
-
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
@@ -102,11 +98,13 @@ export async function getUserByOpenId(openId: string) {
 
 /**
  * Adicionar um novo lead da pré-venda
- * SOLUÇÃO DEFINITIVA: Usa postgres client diretamente para evitar problema com Drizzle
+ * SOLUÇÃO FINAL: Usa postgres client diretamente para evitar problema com Drizzle
  */
 export async function createLead(lead: { fullName: string; email: string; phone: string; instagram: string }) {
-  const client = getClient();
-  if (!client) {
+  // Garante que o client está inicializado
+  await getDb();
+  
+  if (!_client) {
     throw new Error("Database not available");
   }
 
@@ -114,7 +112,7 @@ export async function createLead(lead: { fullName: string; email: string; phone:
   
   try {
     // Usa o client do postgres diretamente, sem Drizzle
-    const result = await client`
+    const result = await _client`
       INSERT INTO leads_midnight_ravers (full_name, email, phone, instagram)
       VALUES (${lead.fullName}, ${lead.email}, ${lead.phone}, ${lead.instagram})
       RETURNING *
